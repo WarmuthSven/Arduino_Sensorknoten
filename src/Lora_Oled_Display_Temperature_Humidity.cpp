@@ -11,15 +11,15 @@ SCD30 airSensor;
 /* Adafruit_AHTX0 aht;
 sensors_event_t humidity_event, temp_event; */
 CustomLoraNetwork loraNetwork(M0_PIN,M1_PIN);
-float pressure, temperature, humidity;
-uint16_t co2ppm;
+float pressure, temperature = 1, humidity = 1;
+uint16_t co2ppm = 1;
 
 String rcvData;
 unsigned long lastTimeSensor = 0;
 unsigned long lastTimeOLED = 0;
 bool stateChange = false;
 
-int maxSamples = 3;
+int maxSamples = 4;
 int samplesCounter = 0;
 
 extern char  *__brkval;
@@ -35,7 +35,7 @@ void setup() {
 	Oled.begin();
 	Pressure.begin();
 	airSensor.begin();
-	airSensor.setTemperatureOffset(0);
+	//airSensor.setTemperatureOffset(0);
 	//aht.begin();
 	
 	Oled.setFlipMode(true);
@@ -81,7 +81,7 @@ void loop() {
 		Oled.setFont(u8x8_font_chroma48medium8_r);
 		Oled.setCursor(0, 0);
 		Oled.print("Ram: " + String(freeRAM()));
-		if(airSensor.dataAvailable()){
+		/* if(airSensor.dataAvailable()){
 			airSensor.setAltitudeCompensation(Pressure.readAltitude());
 			Oled.setCursor(0, 1);
 			Oled.print("CO2: " + String(airSensor.getCO2()) + "ppm");
@@ -89,7 +89,7 @@ void loop() {
 			Oled.print("Temp: " + String(airSensor.getTemperature()) + "°C");
 			Oled.setCursor(0, 3);
 			Oled.print("Hum: " + String(airSensor.getHumidity()) + "%");
-		}
+		} */
 		
 		Oled.setCursor(0, 4);
 		Oled.print("Pres: " + String(Pressure.readPressure()/100000.0) + "Bar");
@@ -177,7 +177,7 @@ void loop() {
 		Oled.refreshDisplay();
 	}
 
-	 if(loraNetwork.CustomDataRequested && airSensor.dataAvailable()){//curTime - lastTimeSensor >= 1000){
+	 if(loraNetwork.CustomDataRequested){// && airSensor.dataAvailable()){//curTime - lastTimeSensor >= 1000){
 		Oled.setCursor(0,5);
 		Oled.print("GO DATA!");
 		lastTimeSensor = curTime;
