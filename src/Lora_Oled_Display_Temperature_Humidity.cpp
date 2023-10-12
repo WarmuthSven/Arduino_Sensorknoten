@@ -35,6 +35,7 @@ void setup() {
 	
 	Oled.setFlipMode(true);
 
+
 	//pinMode(A0, INPUT);
 
 	loraNetwork.Init(maxSamples);
