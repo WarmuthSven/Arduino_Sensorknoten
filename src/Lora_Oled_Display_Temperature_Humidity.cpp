@@ -1,15 +1,18 @@
 #include "Arduino.h"
 #include "Arduino_SensorKit.h"
 #include "Adafruit_AHTX0.h"
+#include "SparkFun_SCD30_Arduino_Library.h"
 #include "CustomLoraNetwork.h"
 
 #define M0_PIN 2
 #define M1_PIN 3 
 
+SCD30 airSensor;
+/* Adafruit_AHTX0 aht;
+sensors_event_t humidity_event, temp_event; */
 CustomLoraNetwork loraNetwork(M0_PIN,M1_PIN);
-Adafruit_AHTX0 aht;
-sensors_event_t humidity_event, temp_event;
-float relativeHumidity = 0, temperature = 0;
+float pressure, temperature, humidity;
+uint16_t co2ppm;
 
 String rcvData;
 unsigned long lastTimeSensor = 0;
@@ -30,6 +33,9 @@ int RL = 1500;
 void setup() {
 	Serial.begin(9600);
 	Oled.begin();
+	Pressure.begin();
+	airSensor.begin();
+	airSensor.setTemperatureOffset(0);
 	//aht.begin();
 	
 	Oled.setFlipMode(true);
@@ -37,10 +43,11 @@ void setup() {
 
 	//pinMode(A0, INPUT);
 
-	/* loraNetwork.Init(maxSamples);
-	loraNetwork.AddDataPointer(&relativeHumidity, "Relative Humidity");
-	loraNetwork.AddDataPointer(&temperature, "Temperature");
-	loraNetwork.AddDataPointer(&test, "Test"); */
+	loraNetwork.Init(maxSamples);
+	loraNetwork.AddDataPointer(&pressure, "Luftdruck");
+	loraNetwork.AddDataPointer(&co2ppm, "CO2");
+	loraNetwork.AddDataPointer(&temperature, "Temperatur");
+	loraNetwork.AddDataPointer(&humidity, "Feuchtigkeit");
 }
 
 short sentPackageSize = 0;
@@ -57,12 +64,12 @@ int testCounter = 0;
 void loop() {
 	unsigned long curTime = millis();
 
-	//loraNetwork.Update();
+	loraNetwork.Update();
 	/*
 	snrValue = lora.RequestSNR();
 	ambientNoise = lora.GetLastNoiseStrength();
 	*/
-	if(curTime - lastTimeOLED >= 5000){		
+	if(curTime - lastTimeOLED >= 2000){		
 		
 		lastTimeOLED = curTime;
 
@@ -74,9 +81,30 @@ void loop() {
 		Oled.setFont(u8x8_font_chroma48medium8_r);
 		Oled.setCursor(0, 0);
 		Oled.print("Ram: " + String(freeRAM()));
+		if(airSensor.dataAvailable()){
+			airSensor.setAltitudeCompensation(Pressure.readAltitude());
+			Oled.setCursor(0, 1);
+			Oled.print("CO2: " + String(airSensor.getCO2()) + "ppm");
+			Oled.setCursor(0, 2);
+			Oled.print("Temp: " + String(airSensor.getTemperature()) + "°C");
+			Oled.setCursor(0, 3);
+			Oled.print("Hum: " + String(airSensor.getHumidity()) + "%");
+		}
+		
+		Oled.setCursor(0, 4);
+		Oled.print("Pres: " + String(Pressure.readPressure()/100000.0) + "Bar");
+		Oled.setCursor(0, 5);
+		Oled.print("Alt: " + String(Pressure.readAltitude()) + "m");
+
+		/* Oled.setCursor(0, 6);
+		aht.getEvent(&humidity_event, &temp_event);
+		Oled.print("Temp2: " + String(temp_event.temperature) + "°C");
+		Oled.setCursor(0, 7);
+		Oled.print("Hum2: " + String(humidity_event.relative_humidity) + "%"); */
+		/*
 		Oled.setCursor(0, 1);
-		Oled.print("rec ");
-		/* Oled.print(loraNetwork.recMessageCounter);
+		Oled.print("rec "); 
+		Oled.print(loraNetwork.recMessageCounter);
 		Oled.print(", sen ");
 		Oled.print(loraNetwork.sentMessageCounter);
 		Oled.setCursor(0, 2);
@@ -93,22 +121,22 @@ void loop() {
 		Oled.print(RS); */
 
 		//String data = loraNetwork.GetData(samplesCounter);
-		Oled.setCursor(0, 3);
+		/*Oled.setCursor(0, 3);
 		Oled.print("State: ");
-		/* Oled.print(loraNetwork.currentNetworkState);
+		 Oled.print(loraNetwork.currentNetworkState);
 		//Oled.print("ID: Rec/Sent");
 		Oled.setCursor(0, 4);
 		Oled.print("rec ");
 		Oled.print(loraNetwork.receivedID);
 		Oled.setCursor(0, 5);
 		Oled.print("sen ");
-		Oled.print(loraNetwork.ID); */
+		Oled.print(loraNetwork.ID); 
 		Oled.setCursor(0, 6);
 		Oled.print("Enum: ");
 		Oled.print(packageEnum);
 		Oled.setCursor(0, 7);
 		Oled.print("Size: ");
-		/* Oled.print(String(loraNetwork.GetLastReceivingPackageSize()));
+		Oled.print(String(loraNetwork.GetLastReceivingPackageSize()));
 		Oled.print("/");
 		Oled.print(String(loraNetwork.GetLastSendingPackageSize())); */
 
@@ -147,21 +175,16 @@ void loop() {
 		Oled.print(" / ");
 		Oled.print(snrValue);*/
 		Oled.refreshDisplay();
-
-		
 	}
 
-	
-
-	/* if(loraNetwork.CustomDataRequested){//curTime - lastTimeSensor >= 1000){
+	 if(loraNetwork.CustomDataRequested && airSensor.dataAvailable()){//curTime - lastTimeSensor >= 1000){
 		Oled.setCursor(0,5);
 		Oled.print("GO DATA!");
 		lastTimeSensor = curTime;
-		bool gotEvents = aht.getEvent(&humidity_event, &temp_event);
-		if(gotEvents){
-			loraNetwork.CustomDataAvailable = true;
-			relativeHumidity = humidity_event.relative_humidity;
-			temperature = temp_event.temperature;
-		};
-	} */
+		co2ppm = airSensor.getCO2();
+		temperature = airSensor.getTemperature();
+		humidity = airSensor.getHumidity();
+		pressure = Pressure.readPressure();
+		loraNetwork.CustomDataAvailable = true;
+	}
 }
