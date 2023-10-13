@@ -35,6 +35,7 @@ void setup() {
 	Oled.begin();
 	Pressure.begin();
 	airSensor.begin();
+	airSensor.useStaleData(true);
 	//airSensor.setTemperatureOffset(0);
 	//aht.begin();
 	
@@ -75,26 +76,41 @@ void loop() {
 
 		/* packageEnum = loraNetwork.lastPackageID;
 		rssiStrength = loraNetwork.GetLastRSSI();
- */
+ 		*/
 		Oled.clearDisplay();
+
+		if(airSensor.dataAvailable()){
+			airSensor.setAltitudeCompensation(Pressure.readAltitude());
+			co2ppm = airSensor.getCO2();
+			temperature = airSensor.getTemperature();
+			humidity = airSensor.getHumidity();
+		}
 
 		Oled.setFont(u8x8_font_chroma48medium8_r);
 		Oled.setCursor(0, 0);
-		Oled.print("Ram: " + String(freeRAM()));
-		/* if(airSensor.dataAvailable()){
-			airSensor.setAltitudeCompensation(Pressure.readAltitude());
-			Oled.setCursor(0, 1);
-			Oled.print("CO2: " + String(airSensor.getCO2()) + "ppm");
-			Oled.setCursor(0, 2);
-			Oled.print("Temp: " + String(airSensor.getTemperature()) + "°C");
-			Oled.setCursor(0, 3);
-			Oled.print("Hum: " + String(airSensor.getHumidity()) + "%");
-		} */
-		
+		Oled.print(F("Ram: "));
+		Oled.print(freeRAM());
+			
+		Oled.setCursor(0, 1);
+		Oled.print(F("CO2: "));
+		Oled.print(co2ppm); 
+		Oled.print(F(" ppm"));
+		Oled.setCursor(0, 2);
+		Oled.print(F("Temp: "));
+		Oled.print(temperature);
+		Oled.print(F(" C"));
+		Oled.setCursor(0, 3);
+		Oled.print(F("Hum: "));
+		Oled.print(humidity);
+		Oled.print(F(" %"));
 		Oled.setCursor(0, 4);
-		Oled.print("Pres: " + String(Pressure.readPressure()/100000.0) + "Bar");
+		Oled.print(F("Pres: "));
+		Oled.print(Pressure.readPressure()/100000.0);
+		Oled.print(F(" Bar"));
 		Oled.setCursor(0, 5);
-		Oled.print("Alt: " + String(Pressure.readAltitude()) + "m");
+		Oled.print(F("Alt: "));
+		Oled.print(Pressure.readAltitude());
+		Oled.print(F("m"));
 
 		/* Oled.setCursor(0, 6);
 		aht.getEvent(&humidity_event, &temp_event);
@@ -177,9 +193,9 @@ void loop() {
 		Oled.refreshDisplay();
 	}
 
-	 if(loraNetwork.CustomDataRequested){// && airSensor.dataAvailable()){//curTime - lastTimeSensor >= 1000){
-		Oled.setCursor(0,5);
-		Oled.print("GO DATA!");
+	 if(loraNetwork.CustomDataRequested && airSensor.dataAvailable()){//curTime - lastTimeSensor >= 1000){
+		Oled.setCursor(0,6);
+		Oled.print(F("GO DATA!"));
 		lastTimeSensor = curTime;
 		co2ppm = airSensor.getCO2();
 		temperature = airSensor.getTemperature();
