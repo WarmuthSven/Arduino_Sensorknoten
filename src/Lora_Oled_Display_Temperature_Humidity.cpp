@@ -62,6 +62,7 @@ int snrValue = 0;
 int maxTests = 10;
 int testCounter = 0;
 
+
 void loop() {
 	unsigned long curTime = millis();
 
@@ -79,12 +80,12 @@ void loop() {
  		*/
 		Oled.clearDisplay();
 
-		if(airSensor.dataAvailable()){
+		//if(airSensor.dataAvailable()){
 			airSensor.setAltitudeCompensation(Pressure.readAltitude());
 			co2ppm = airSensor.getCO2();
 			temperature = airSensor.getTemperature();
 			humidity = airSensor.getHumidity();
-		}
+		//}
 
 		Oled.setFont(u8x8_font_chroma48medium8_r);
 		Oled.setCursor(0, 0);
@@ -193,7 +194,7 @@ void loop() {
 		Oled.refreshDisplay();
 	}
 
-	 if(loraNetwork.CustomDataRequested && airSensor.dataAvailable()){//curTime - lastTimeSensor >= 1000){
+	 if(loraNetwork.CustomDataRequested){//curTime - lastTimeSensor >= 1000){
 		Oled.setCursor(0,6);
 		Oled.print(F("GO DATA!"));
 		lastTimeSensor = curTime;
