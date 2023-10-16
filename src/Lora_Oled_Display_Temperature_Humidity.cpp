@@ -12,7 +12,7 @@ SCD30 airSensor;
 sensors_event_t humidity_event, temp_event; */
 CustomLoraNetwork loraNetwork(M0_PIN,M1_PIN);
 float pressure, temperature = 1, humidity = 1;
-uint16_t co2ppm = 1;
+unsigned int co2ppm = 1;
 
 String rcvData;
 unsigned long lastTimeSensor = 0;
@@ -81,10 +81,10 @@ void loop() {
 		Oled.clearDisplay();
 
 		//if(airSensor.dataAvailable()){
-			airSensor.setAltitudeCompensation(Pressure.readAltitude());
+			/* airSensor.setAltitudeCompensation(Pressure.readAltitude());
 			co2ppm = airSensor.getCO2();
 			temperature = airSensor.getTemperature();
-			humidity = airSensor.getHumidity();
+			humidity = airSensor.getHumidity(); */
 		//}
 
 		Oled.setFont(u8x8_font_chroma48medium8_r);
