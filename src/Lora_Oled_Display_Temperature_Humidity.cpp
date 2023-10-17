@@ -1,4 +1,5 @@
 #include "Arduino.h"
+#include "Wire.h"
 #include "Arduino_SensorKit.h"
 #include "Adafruit_AHTX0.h"
 #include "SparkFun_SCD30_Arduino_Library.h"
@@ -32,6 +33,7 @@ int RL = 1500;
 
 void setup() {
 	Serial.begin(9600);
+	Wire.begin();
 	Oled.begin();
 	Pressure.begin();
 	airSensor.begin();
@@ -80,12 +82,12 @@ void loop() {
  		*/
 		Oled.clearDisplay();
 
-		//if(airSensor.dataAvailable()){
-			/* airSensor.setAltitudeCompensation(Pressure.readAltitude());
+		if(airSensor.dataAvailable()){
+			airSensor.setAltitudeCompensation(Pressure.readAltitude());
 			co2ppm = airSensor.getCO2();
 			temperature = airSensor.getTemperature();
-			humidity = airSensor.getHumidity(); */
-		//}
+			humidity = airSensor.getHumidity(); 
+		}
 
 		Oled.setFont(u8x8_font_chroma48medium8_r);
 		Oled.setCursor(0, 0);
