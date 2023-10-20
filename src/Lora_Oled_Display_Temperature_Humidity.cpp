@@ -34,16 +34,16 @@ int RL = 1500;
 void setup() {
 	Serial.begin(9600);
 	Wire.begin();
+	Wire.setWireTimeout(25000,true);
 	Oled.begin();
+	Oled.setFlipMode(true);
 	Pressure.begin();
 	airSensor.begin();
 	airSensor.useStaleData(true);
+	airSensor.setAltitudeCompensation(200);
 	//airSensor.setTemperatureOffset(0);
 	//aht.begin();
 	
-	Oled.setFlipMode(true);
-
-
 	//pinMode(A0, INPUT);
 
 	loraNetwork.Init(maxSamples);
@@ -80,14 +80,16 @@ void loop() {
 		/* packageEnum = loraNetwork.lastPackageID;
 		rssiStrength = loraNetwork.GetLastRSSI();
  		*/
-		Oled.clearDisplay();
 
 		if(airSensor.dataAvailable()){
-			airSensor.setAltitudeCompensation(Pressure.readAltitude());
 			co2ppm = airSensor.getCO2();
 			temperature = airSensor.getTemperature();
-			humidity = airSensor.getHumidity(); 
+			humidity = airSensor.getHumidity();
 		}
+
+		pressure = Pressure.readPressure();
+
+		Oled.clearDisplay();
 
 		Oled.setFont(u8x8_font_chroma48medium8_r);
 		Oled.setCursor(0, 0);
@@ -108,12 +110,9 @@ void loop() {
 		Oled.print(F(" %"));
 		Oled.setCursor(0, 4);
 		Oled.print(F("Pres: "));
-		Oled.print(Pressure.readPressure()/100000.0);
+		Oled.print(pressure/100000.0);
 		Oled.print(F(" Bar"));
 		Oled.setCursor(0, 5);
-		Oled.print(F("Alt: "));
-		Oled.print(Pressure.readAltitude());
-		Oled.print(F("m"));
 
 		/* Oled.setCursor(0, 6);
 		aht.getEvent(&humidity_event, &temp_event);
