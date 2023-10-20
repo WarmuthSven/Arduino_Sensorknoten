@@ -1,7 +1,8 @@
 #include "Arduino.h"
 #include "Wire.h"
+#include "Adafruit_Sensor.h" // Manually add libray for PIO
 #include "Arduino_SensorKit.h"
-#include "Adafruit_AHTX0.h"
+//#include "Adafruit_AHTX0.h"
 #include "SparkFun_SCD30_Arduino_Library.h"
 #include "CustomLoraNetwork.h"
 
