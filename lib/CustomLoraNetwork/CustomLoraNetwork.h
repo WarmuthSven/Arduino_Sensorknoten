@@ -37,7 +37,6 @@ class CustomLoraNetwork{
 		Lora LoraModule;
 		uint16_t eepromAddress;
 		bool hasRecoveredEeprom;
-		CRC32 crc;
 
 		int maxSamples;
 		void** dataPointerArray;
@@ -53,7 +52,6 @@ class CustomLoraNetwork{
 
 		bool SendNodeDiscoveryAnswer;
 		bool SetNewNodeAddress;
-		unsigned short parentAddress;
 	
 		unsigned short nextAvailableNodeAddress;
 		unsigned short nextNotifiedNodeAddress;
@@ -141,6 +139,8 @@ class CustomLoraNetwork{
 
 		
 		//Temp Public
+		CRC32 crc;
+		uint32_t setupChecksum;
 		PackageType lastPackageID;
 		NetworkState currentNetworkState;
 		unsigned long recMessageCounter;
@@ -150,6 +150,7 @@ class CustomLoraNetwork{
 		long ID;
 		long parentID;
 		unsigned short nodeAddress;
+		unsigned short parentAddress;
 		long lastMainUnitID;
 		long receivedID;
 		int addedSamples;
