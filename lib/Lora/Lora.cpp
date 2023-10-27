@@ -3,8 +3,6 @@
 Lora::Lora(byte M0, byte M1){
 	this->M0 = M0;
 	this->M1 = M1;
-
-	receivingPackage.headerOffset = 1;
 }
 
 void Lora::Init(bool worMode){
@@ -61,28 +59,17 @@ void Lora::ApplySetup(){
 	delay(100);
 }
 
-void Lora::StartNewSendPackage(){
-	sendingPackage.packageSize = 0;
-	sendingPackage.headerOffset = sizeof(byte); //Place for messageSize(1)
+void Lora::StartNewSendPackage(uint8_t estimatedDataSize = 0){
+	sendingPackage.ResetBytes(estimatedDataSize,1);
 }
 
-void Lora::StartNewSendPackage(unsigned int address, uint8_t channel){
-	sendingPackage.packageSize = 0;
-	sendingPackage.headerOffset = 0;
-
+void Lora::StartNewSendPackage(unsigned int address, uint8_t channel, uint8_t estimatedDataSize = 0){
 	if(channel > 83){
 		channel = 83;
 	}
 
-	byte* bytes = new byte[3];
-	bytes[0] = address >> 8;
-	bytes[1] = address & 0xFF;
-	bytes[2] = channel;
-	sendingPackage.WriteBytes(bytes, 3);
-	delete [] bytes;
-
-	sendingPackage.packageSize = 0;
-	sendingPackage.headerOffset = 4 * sizeof(byte); //Place for address (2), channel (1), messageSize(1)
+	sendingPackage.ResetBytes(estimatedDataSize,4);
+	sendingPackage.SetHeader(address, channel);
 }
 
 void Lora::AddToSendPackage(byte* bytes, int size){
@@ -107,37 +94,86 @@ bool Lora::HasPackage(){
 	return false;
 }
 
+uint8_t Lora::Package::combinedOffset(){
+	return headerOffset + dataOffset;
+}
 
 void Lora::Package::ReadBytes(bool receiveRSSI){
-	Serial.readBytes(byteBuffer, headerOffset);
-	packageSize = DatatypeConverter::GetDataValue<byte>(byteBuffer);
+	byte bytes[1];
+	Serial.readBytes(bytes, 0);
+
+	capacity = DatatypeConverter::GetDataValue<byte>(bytes);
+	headerOffset = 0;
+	dataOffset = capacity;
+
+	delete [] byteBuffer;
+	byteBuffer = new byte[capacity];
+
+	Serial.readBytes(byteBuffer, capacity);
 
 	if(receiveRSSI){
-		packageSize++;
-	}
-
-	Serial.readBytes(byteBuffer, packageSize);
-
-	if(receiveRSSI){
-		packageSize--; //decrease for correct overall package Size
-		rssiStrength = -256 + int(byteBuffer[packageSize]);
+		Serial.readBytes(bytes, 0);
+		rssiStrength = -256 + int(bytes[0]);
 	}
 }
 
-void Lora::Package::WriteBytes(byte* bytes, int size){
-	if (packageSize + size > 240 - 1) return;
+void Lora::Package::ResetBytes(){
+	delete [] byteBuffer;
+	capacity = 0;
+	headerOffset = 0;
+	dataOffset = 0;
+}
 
-	memcpy(&byteBuffer[headerOffset + packageSize], bytes, size);
-	packageSize += size;
+void Lora::Package::ResetBytes(uint8_t estimatedDataSize, uint8_t headerSize){
+	ResetBytes();
+	headerOffset = headerSize;
+	capacity = headerSize + estimatedDataSize;
+	byteBuffer = new byte[capacity];
+}
+
+void Lora::Package::SetHeader(unsigned int address, uint8_t channel){
+	byte* bytes = new byte[3];
+	bytes[0] = address >> 8;
+	bytes[1] = address & 0xFF;
+	bytes[2] = channel;
+	WriteBytes(bytes, 3, 0);
+	delete [] bytes;
+}
+
+void Lora::Package::WriteBytes(byte* bytes, uint8_t size, uint8_t offset){
+	if (offset + size > 240) return;
+
+	if(capacity < offset + size){
+		
+		byte* oldByteBuffer = byteBuffer;
+		uint8_t oldCapacity = capacity;
+		capacity = offset + size;
+
+		//Enlarge Array and copy old entries
+		byteBuffer = new byte[capacity];
+		memcpy(byteBuffer, oldByteBuffer, combinedOffset());
+
+		delete [] oldByteBuffer;
+	}
+
+	memcpy(&byteBuffer[offset], bytes, size);
+
+	if(offset + size > combinedOffset()){
+		dataOffset = offset + size - headerOffset;
+	}
+}
+
+void Lora::Package::WriteBytes(byte* bytes, uint8_t size){
+	WriteBytes(bytes, size, combinedOffset());
 }
 
 void Lora::Package::Send(){
-	memcpy(&byteBuffer[headerOffset - 1], &packageSize, 1);
+	byteBuffer[headerOffset - 1] = combinedOffset();
 	
 	Serial.flush(); 
 	while(millis() < nextAvailableSendTime){}; // Wait for the last data to be fully transmitted
-	Serial.write(byteBuffer, headerOffset + packageSize);
-	nextAvailableSendTime = millis() + (headerOffset + packageSize) * 40;
+	Serial.write(byteBuffer, combinedOffset());
+	nextAvailableSendTime = millis() + (combinedOffset()) * 40;
 }
 
 byte* Lora::GetPackage(){
@@ -145,10 +181,10 @@ byte* Lora::GetPackage(){
 }
 
 unsigned int Lora::GetReceivingPackageSize(){
-	return receivingPackage.packageSize;
+	return receivingPackage.combinedOffset();
 }
 unsigned int Lora::GetSendingPackageSize(){
-	return sendingPackage.packageSize;
+	return sendingPackage.combinedOffset();
 }
 
 int Lora::GetRSSI(){
