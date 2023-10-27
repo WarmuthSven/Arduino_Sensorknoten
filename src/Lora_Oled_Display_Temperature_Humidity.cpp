@@ -97,7 +97,7 @@ void loop() {
 		Oled.print(F("Ram: "));
 		Oled.print(freeRAM());
 			
-		/* Oled.setCursor(0, 1);
+		Oled.setCursor(0, 1);
 		Oled.print(F("CO2: "));
 		Oled.print(co2ppm); 
 		Oled.print(F(" ppm"));
@@ -113,9 +113,9 @@ void loop() {
 		Oled.print(F("Pres: "));
 		Oled.print(pressure/100000.0);
 		Oled.print(F(" Bar"));
-		Oled.setCursor(0, 5); */
+		Oled.setCursor(0, 5);
 
-		Oled.setCursor(0, 1);
+		/*Oled.setCursor(0, 1);
 		Oled.print(F("MID: "));
 		Oled.print(loraNetwork.lastMainUnitID);
 		Oled.setCursor(0, 2);
@@ -132,7 +132,7 @@ void loop() {
 		Oled.print(loraNetwork.parentAddress);
 		Oled.setCursor(0, 6);
 		Oled.print(F("CRC: "));
-		Oled.print(loraNetwork.setupChecksum);
+		Oled.print(loraNetwork.setupChecksum);*/
 
 		/* Oled.setCursor(0, 6);
 		aht.getEvent(&humidity_event, &temp_event);
