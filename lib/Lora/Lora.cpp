@@ -99,21 +99,15 @@ uint8_t Lora::Package::combinedOffset(){
 }
 
 void Lora::Package::ReadBytes(bool receiveRSSI){
-	byte bytes[1];
-	Serial.readBytes(bytes, 0);
+	byte readByte;
+	Serial.readBytes(&readByte, 1);
 
-	capacity = DatatypeConverter::GetDataValue<byte>(bytes);
-	headerOffset = 0;
-	dataOffset = capacity;
-
-	delete [] byteBuffer;
-	byteBuffer = new byte[capacity];
-
+	ResetBytes(readByte,0);
 	Serial.readBytes(byteBuffer, capacity);
 
 	if(receiveRSSI){
-		Serial.readBytes(bytes, 0);
-		rssiStrength = -256 + int(bytes[0]);
+		Serial.readBytes(&readByte, 1);
+		rssiStrength = -256 + int(readByte);
 	}
 }
 
