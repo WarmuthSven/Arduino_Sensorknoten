@@ -543,8 +543,6 @@ void CustomLoraNetwork::SendPackage(unsigned int address, PackageType packageEnu
 
 		case NetworkRelayDiscoveryRequest:
 			estimatedDataSize += 6;
-			AddToPackage(childNodeIDs[nextRelayRequestedAddress - childNodeStartAddress]);
-			AddToPackage(nextAvailableNodeAddress);
 			break;
 
 		case NetworkRelayDiscoveryAnswer:

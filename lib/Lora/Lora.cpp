@@ -59,11 +59,11 @@ void Lora::ApplySetup(){
 	delay(100);
 }
 
-void Lora::StartNewSendPackage(uint8_t estimatedDataSize = 0){
+void Lora::StartNewSendPackage(uint8_t estimatedDataSize){
 	sendingPackage.ResetBytes(estimatedDataSize,1);
 }
 
-void Lora::StartNewSendPackage(unsigned int address, uint8_t channel, uint8_t estimatedDataSize = 0){
+void Lora::StartNewSendPackage(unsigned int address, uint8_t channel, uint8_t estimatedDataSize){
 	if(channel > 83){
 		channel = 83;
 	}
@@ -140,7 +140,6 @@ void Lora::Package::WriteBytes(byte* bytes, uint8_t size, uint8_t offset){
 	if(capacity < offset + size){
 		
 		byte* oldByteBuffer = byteBuffer;
-		uint8_t oldCapacity = capacity;
 		capacity = offset + size;
 
 		//Enlarge Array and copy old entries
@@ -162,7 +161,7 @@ void Lora::Package::WriteBytes(byte* bytes, uint8_t size){
 }
 
 void Lora::Package::Send(){
-	byteBuffer[headerOffset - 1] = combinedOffset();
+	byteBuffer[headerOffset - 1] = dataOffset;
 	
 	Serial.flush(); 
 	while(millis() < nextAvailableSendTime){}; // Wait for the last data to be fully transmitted
