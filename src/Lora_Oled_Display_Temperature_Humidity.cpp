@@ -115,6 +115,25 @@ void loop() {
 		Oled.print(F(" Bar"));
 		Oled.setCursor(0, 5);
 
+		/*Oled.setCursor(0, 1);
+		Oled.print(F("MID: "));
+		Oled.print(loraNetwork.lastMainUnitID);
+		Oled.setCursor(0, 2);
+		Oled.print(F("ID: "));
+		Oled.print(loraNetwork.ID);
+		Oled.setCursor(0, 3);
+		Oled.print(F("Add: "));
+		Oled.print(loraNetwork.nodeAddress); 
+		Oled.setCursor(0, 4);
+		Oled.print(F("PID: "));
+		Oled.print(loraNetwork.parentID);
+		Oled.setCursor(0, 5);
+		Oled.print(F("PAdd: "));
+		Oled.print(loraNetwork.parentAddress);
+		Oled.setCursor(0, 6);
+		Oled.print(F("CRC: "));
+		Oled.print(loraNetwork.setupChecksum);*/
+
 		/* Oled.setCursor(0, 6);
 		aht.getEvent(&humidity_event, &temp_event);
 		Oled.print("Temp2: " + String(temp_event.temperature) + "°C");
@@ -197,7 +216,7 @@ void loop() {
 	}
 
 	 if(loraNetwork.CustomDataRequested){//curTime - lastTimeSensor >= 1000){
-		Oled.setCursor(0,6);
+		Oled.setCursor(0,7);
 		Oled.print(F("GO DATA!"));
 		lastTimeSensor = curTime;
 		co2ppm = airSensor.getCO2();

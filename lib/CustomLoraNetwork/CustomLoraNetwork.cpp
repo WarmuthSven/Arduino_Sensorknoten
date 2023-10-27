@@ -1,7 +1,15 @@
 #include "CustomLoraNetwork.h"
+#include "EEPROM.h"
+#include "CRC32.h"
 
+CustomLoraNetwork::CustomLoraNetwork(byte M0, byte M1) : CustomLoraNetwork(M0, M1, 0){}
 
-CustomLoraNetwork::CustomLoraNetwork(byte M0, byte M1) : LoraModule(M0, M1){
+CustomLoraNetwork::CustomLoraNetwork(byte M0, byte M1, uint16_t eepromAddress) : LoraModule(M0, M1){
+	this->eepromAddress = eepromAddress;
+	hasRecoveredEeprom = false;
+	crc.reset();
+	setupChecksum = 0;
+
 	currentNetworkState = IdleNetworkState;
 	lastPackageID = UNDEFINEDPACKAGE;
 	CustomDataRequested = false;
@@ -89,7 +97,101 @@ CustomLoraNetwork::~CustomLoraNetwork(){
 	delete [] recDataTypesArray;
 }
 
+void CustomLoraNetwork::RecoverEeprom(){
+	setupChecksum = crc.finalize();
+
+	uint16_t size = 2 * sizeof(uint32_t) + 3* sizeof(long) + 2* sizeof(unsigned short); //24
+	if(EEPROM.length() < eepromAddress + size - 1) return;
+
+	uint16_t curAddress = eepromAddress;
+	uint32_t storedChecksum;
+	EEPROM.get(curAddress,storedChecksum);
+	curAddress += sizeof(storedChecksum);
+
+	if(storedChecksum != setupChecksum) return;
+
+	CRC32 dataCrc;
+
+	long eepromMainUnitID;
+	EEPROM.get(curAddress,eepromMainUnitID);
+	curAddress += sizeof(eepromMainUnitID);
+	dataCrc.update(eepromMainUnitID);
+
+	long eepromID;
+	EEPROM.get(curAddress,eepromID);
+	curAddress += sizeof(eepromID);
+	dataCrc.update(eepromID);
+
+	unsigned short eepromNodeAddress;
+	EEPROM.get(curAddress,eepromNodeAddress);
+	curAddress += sizeof(eepromNodeAddress);
+	dataCrc.update(eepromNodeAddress);
+
+	long eepromParentID;
+	EEPROM.get(curAddress,eepromParentID);
+	curAddress += sizeof(eepromParentID);
+	dataCrc.update(eepromParentID);
+
+	unsigned short eepromParentAddress;
+	EEPROM.get(curAddress,eepromParentAddress);
+	curAddress += sizeof(eepromParentAddress);
+	dataCrc.update(eepromParentAddress);
+
+	EEPROM.get(curAddress,storedChecksum);
+	curAddress += sizeof(storedChecksum);
+
+	if(storedChecksum != dataCrc.finalize()) return;
+
+	lastMainUnitID = eepromMainUnitID;
+	ID = eepromID;
+	nodeAddress = eepromNodeAddress;
+	parentID = eepromParentID; 
+	parentAddress = eepromParentAddress;
+	RegistrationSuccess = true;
+	SetNewNodeAddress = true;
+	currentNetworkState = ChildNodeDiscoveryNetworkState;
+}
+
+void CustomLoraNetwork::UpdateEeprom(){
+	uint16_t size = 2 * sizeof(uint32_t) + 3* sizeof(long) + 2* sizeof(unsigned short); //24
+	if(EEPROM.length() < eepromAddress + size - 1) return;
+
+	uint16_t curAddress = eepromAddress;
+	EEPROM.put(curAddress,setupChecksum);
+	curAddress += sizeof(uint32_t);
+
+	CRC32 dataCrc;
+
+	EEPROM.put(curAddress,lastMainUnitID);
+	curAddress += sizeof(lastMainUnitID);
+	dataCrc.update(lastMainUnitID);
+
+	EEPROM.put(curAddress,ID);
+	curAddress += sizeof(ID);
+	dataCrc.update(ID);
+
+	EEPROM.put(curAddress,nodeAddress);
+	curAddress += sizeof(nodeAddress);
+	dataCrc.update(nodeAddress);
+
+	EEPROM.put(curAddress,parentID);
+	curAddress += sizeof(parentID);
+	dataCrc.update(parentID);
+
+	EEPROM.put(curAddress,parentAddress);
+	curAddress += sizeof(parentAddress);
+	dataCrc.update(parentAddress);
+
+	EEPROM.put(curAddress,dataCrc.finalize());
+	curAddress += sizeof(uint32_t);
+}
+
 void CustomLoraNetwork::Update(){
+	if(!hasRecoveredEeprom){
+		hasRecoveredEeprom = true;
+		RecoverEeprom();
+	}
+
 	LoraModule.Update();
 
 	while(LoraModule.HasPackage()){
@@ -392,6 +494,7 @@ void CustomLoraNetwork::ReadPackage(byte* byteBuffer){
 
 			if(receivedID == ID){
 				RegistrationSuccess = true;
+				UpdateEeprom();
 			}
 			break;
 		}
@@ -533,7 +636,17 @@ void CustomLoraNetwork::AddDataPointer(T* Data, String DataName){
 	dataPointerArray[addedSamples] = Data;
 	dataNamesArray[addedSamples] = DataName;
 	dataTypesArray[addedSamples] = DatatypeConverter::GetDataType<T>(*Data);
-	addedSamples++; 
+
+	//Update crc
+	unsigned int bufsize = DataName.length();
+	unsigned char* buf = new unsigned char[bufsize];
+	DataName.getBytes(buf, bufsize);
+	crc.update(buf, bufsize);
+	crc.update(dataTypesArray[addedSamples]);
+	crc.update(addedSamples);
+	delete [] buf;
+
+	addedSamples++;
 }
 
 template void CustomLoraNetwork::AddDataPointer(bool* Data, String DataName);

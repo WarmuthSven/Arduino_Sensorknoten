@@ -4,6 +4,7 @@
 #include "Arduino.h"
 #include "Lora.h"
 #include "Datatypes.h"
+#include "CRC32.h"
 
 enum PackageType : byte{
 	NetworkNodeDiscoveryRequest = 0,
@@ -34,6 +35,9 @@ class CustomLoraNetwork{
 		};
 
 		Lora LoraModule;
+		uint16_t eepromAddress;
+		bool hasRecoveredEeprom;
+
 		int maxSamples;
 		void** dataPointerArray;
 		String* dataNamesArray;
@@ -48,7 +52,6 @@ class CustomLoraNetwork{
 
 		bool SendNodeDiscoveryAnswer;
 		bool SetNewNodeAddress;
-		unsigned short parentAddress;
 	
 		unsigned short nextAvailableNodeAddress;
 		unsigned short nextNotifiedNodeAddress;
@@ -69,6 +72,9 @@ class CustomLoraNetwork{
 		bool RegistrationRequested;
 		bool RegistrationSuccess;
 		
+		void RecoverEeprom();
+		void UpdateEeprom();
+
 		void HandleIdleState();
 		void HandleChildNodeDiscovery();
 		void HandleChildRelayDiscovery();
@@ -115,6 +121,7 @@ class CustomLoraNetwork{
 
 	public:
 		CustomLoraNetwork(byte M0, byte M1);
+		CustomLoraNetwork(byte M0, byte M1, uint16_t eepromAddress);
 		~CustomLoraNetwork();
 		void Init(int maxDataSamples);
 		void Update();
@@ -132,6 +139,8 @@ class CustomLoraNetwork{
 
 		
 		//Temp Public
+		CRC32 crc;
+		uint32_t setupChecksum;
 		PackageType lastPackageID;
 		NetworkState currentNetworkState;
 		unsigned long recMessageCounter;
@@ -141,6 +150,7 @@ class CustomLoraNetwork{
 		long ID;
 		long parentID;
 		unsigned short nodeAddress;
+		unsigned short parentAddress;
 		long lastMainUnitID;
 		long receivedID;
 		int addedSamples;
