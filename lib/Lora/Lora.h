@@ -8,15 +8,21 @@
 class Lora{
 	class Package{
 		private:
+			uint8_t headerOffset = 0;
+			uint8_t dataOffset = 0;
+			uint8_t capacity = 0;
 		public:
-			byte byteBuffer[243];
 			int rssiStrength = 0;
-			int headerOffset;
-			unsigned int packageSize = 0;
 			unsigned long nextAvailableSendTime;
 			void ReadBytes(bool receiveRSSI);
-			void WriteBytes(byte* bytes, int size);
+			void WriteBytes(byte* bytes, uint8_t size);
+			void WriteBytes(byte* bytes, uint8_t size, uint8_t offset);
 			void Send();
+			void SetHeader(unsigned int address, uint8_t channel);
+			void ResetBytes();
+			void ResetBytes(uint8_t estimatedDataSize, uint8_t headerSize);
+			byte* byteBuffer = nullptr;
+			uint8_t combinedOffset();
 	};
 
 	private:
@@ -40,8 +46,8 @@ class Lora{
 		void Update();
 
 		void ApplySetup();
-		void StartNewSendPackage();
-		void StartNewSendPackage(unsigned int address, uint8_t channel);
+		void StartNewSendPackage(uint8_t estimatedDataSize = 0);
+		void StartNewSendPackage(unsigned int address, uint8_t channel, uint8_t estimatedDataSize = 0);
 		void AddToSendPackage(byte* bytes, int size);
 		void SendPackage();
 

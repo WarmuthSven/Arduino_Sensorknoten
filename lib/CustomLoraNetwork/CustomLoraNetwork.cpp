@@ -527,15 +527,57 @@ void CustomLoraNetwork::ReadPackage(byte* byteBuffer){
 
 void CustomLoraNetwork::SendPackage(unsigned int address, PackageType packageEnum){
 
+	uint8_t estimatedDataSize = 0;
+	switch(packageEnum){
+		case NetworkNodeDiscoveryRequest:
+			estimatedDataSize += 6;
+			break;
+
+		case NetworkNodeDiscoveryAnswer:
+			estimatedDataSize += 4;
+			break;
+
+		case NetworkNodeAddressAssignment:
+			estimatedDataSize += 10;
+			break;
+
+		case NetworkRelayDiscoveryRequest:
+			estimatedDataSize += 6;
+			break;
+
+		case NetworkRelayDiscoveryAnswer:
+			estimatedDataSize += 6 + childNodeCount * 2;
+			break;
+
+		case RegistrationAnswer:
+			estimatedDataSize += 2;
+
+			for(int i = 0; i < addedSamples; i++){
+				estimatedDataSize += 2 + dataNamesArray[i].length();
+			}
+
+			break;
+
+		case CustomDataAnswer:
+			for(int i = 0; i < addedSamples; i++){
+				estimatedDataSize += DatatypeConverter::GetSizeOf(dataTypesArray[i]);
+			}
+			break;
+
+		default:
+			break;
+	
+	}
+
 	unsigned short numberOfRelays;
 	unsigned short mainUnitAddress = 0;
 	if(address == mainUnitAddress){
-		LoraModule.StartNewSendPackage(parentAddress, 0);
+		LoraModule.StartNewSendPackage(parentAddress, 0, estimatedDataSize + 9);
 		numberOfRelays = 1;
 		AddToPackage(numberOfRelays);
 		AddToPackage(mainUnitAddress);//Relay To Address (0 => MainUnit)
 	} else {
-		LoraModule.StartNewSendPackage(address, 0);
+		LoraModule.StartNewSendPackage(address, 0, estimatedDataSize + 7);
 		numberOfRelays = 0;
 		AddToPackage(numberOfRelays);
 	}
@@ -611,12 +653,12 @@ void CustomLoraNetwork::RelayPackage(byte* byteBuffer){
 
 	if(nextAddress > 0){ 
 		//Relay to nextAddress
-		LoraModule.StartNewSendPackage(nextAddress, 0);
+		LoraModule.StartNewSendPackage(nextAddress, 0, packageSize - offset + 2);
 		numberOfRelays -= 1;
 		AddToPackage(numberOfRelays);
 	} else {
 		//Relay to MainUnit over parentAddress
-		LoraModule.StartNewSendPackage(parentAddress, 0);
+		LoraModule.StartNewSendPackage(parentAddress, 0, packageSize);
 		offset = 0; //Just copy whole message
 	}
 
@@ -626,7 +668,6 @@ void CustomLoraNetwork::RelayPackage(byte* byteBuffer){
 	LoraModule.SendPackage();
 	sentMessageCounter++;
 	lastTimePackageSent = millis();
-
 }
 
 template <typename T>
