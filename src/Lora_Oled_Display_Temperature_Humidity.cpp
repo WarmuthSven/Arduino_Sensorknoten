@@ -2,35 +2,30 @@
 #include "Wire.h"
 #include "Adafruit_Sensor.h" // Manually add libray for PIO
 #include "Arduino_SensorKit.h"
-//#include "Adafruit_AHTX0.h"
 #include "SparkFun_SCD30_Arduino_Library.h"
 #include "CustomLoraNetwork.h"
 
 #define M0_PIN 2
 #define M1_PIN 3 
 
+uint8_t methanPin = A3;
+uint8_t coPin = A0;
+
 SCD30 airSensor;
-/* Adafruit_AHTX0 aht;
-sensors_event_t humidity_event, temp_event; */
 CustomLoraNetwork loraNetwork(M0_PIN,M1_PIN);
-float pressure, temperature = 1, humidity = 1;
-unsigned int co2ppm = 1;
+
+float pressure = 0, temperature = 0, humidity = 0;
+unsigned int co2ppm = 0, coAmount = 0, methanAmount = 0;
 
 String rcvData;
 unsigned long lastTimeSensor = 0;
 unsigned long lastTimeOLED = 0;
 bool stateChange = false;
 
-int maxSamples = 4;
-int samplesCounter = 0;
-
 extern char  *__brkval;
 int freeRAM() {
   return 2048 -  (int) __brkval;
 }
-
-float VC = 5.0;
-int RL = 1500;
 
 void setup() {
 	Serial.begin(9600);
@@ -43,15 +38,17 @@ void setup() {
 	airSensor.useStaleData(true);
 	airSensor.setAltitudeCompensation(200);
 	//airSensor.setTemperatureOffset(0);
-	//aht.begin();
 	
-	//pinMode(A0, INPUT);
+	pinMode(methanPin, INPUT);
+	pinMode(coPin, INPUT);
 
-	loraNetwork.Init(maxSamples);
+	loraNetwork.Init(6);
 	loraNetwork.AddDataPointer(&pressure, "Luftdruck");
 	loraNetwork.AddDataPointer(&co2ppm, "CO2");
 	loraNetwork.AddDataPointer(&temperature, "Temperatur");
 	loraNetwork.AddDataPointer(&humidity, "Feuchtigkeit");
+	loraNetwork.AddDataPointer(&methanAmount, "Methan");
+	loraNetwork.AddDataPointer(&coAmount, "CO");
 }
 
 short sentPackageSize = 0;
@@ -114,6 +111,16 @@ void loop() {
 		Oled.print(pressure/100000.0);
 		Oled.print(F(" Bar"));
 		Oled.setCursor(0, 5);
+		Oled.print(F("Methan: "));
+		float gas = analogRead(methanPin);
+		Oled.print(gas * 100 / 1023.0);
+		Oled.print(F(" %"));
+		Oled.setCursor(0, 6);
+		Oled.print(F("CO: "));
+		gas = analogRead(coPin);
+		Oled.print(gas * 100 / 1023.0);
+		Oled.print(F(" %"));
+		
 
 		/*Oled.setCursor(0, 1);
 		Oled.print(F("MID: "));
@@ -152,6 +159,7 @@ void loop() {
 		/*Oled.print(rssiStrength);
 		Oled.print(" RSSI"); */
 
+		
 		/* float ADCval = analogRead(A0);
 		float VRL = (5.0 / 1023) * ADCval;
 		float RS = (VC / VRL - 1) * RL;
@@ -196,9 +204,6 @@ void loop() {
 		Oled.print(String(loraNetwork.GetLastSendingPackageSize()) + " / " + String(loraNetwork.GetLastReceivingPackageSize())); 
 		*/
 
-		samplesCounter++;
-		samplesCounter%= maxSamples;
-
 		/*Oled.setCursor(0, 3);
 		Oled.print("Received Random:");
 		Oled.setCursor(0, 4);
@@ -220,9 +225,11 @@ void loop() {
 		Oled.print(F("GO DATA!"));
 		lastTimeSensor = curTime;
 		co2ppm = airSensor.getCO2();
-		temperature = airSensor.getTemperature();
 		humidity = airSensor.getHumidity();
+		temperature = Pressure.readTemperature();
 		pressure = Pressure.readPressure();
+		methanAmount = analogRead(methanPin);
+		coAmount = analogRead(coPin);
 		loraNetwork.CustomDataAvailable = true;
 	}
 }
