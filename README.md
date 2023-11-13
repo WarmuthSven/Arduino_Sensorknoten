@@ -1,8 +1,9 @@
 # Arduino_Sensorknoten
-## Code Compilation
+## Code Compilation (PlatformIO)
 Code is Compiled with PlatformIO addon for VSCode.
 All compile instructions are inside the platformio.ini.
 
+## Code Compilation (Arduino IDE)
 If you are instead only using the default Arduino IDE, you need to install following packets:
 - hideakitai/ArxTypeTraits@^0.2.3
 - sparkfun/SparkFun SCD30 Arduino Library@^1.0.20
