@@ -26,6 +26,6 @@ repositories in the operational phase":
 Translation:
 The LoRa-Libraries Lora.cpp and LoraSetup.cpp contain the possible options for the LoRa-Module.
 They handle the Reading and Sending of Bytes, customized for the module SX1262.
-More Information are located in the [Waveshare-Wiki](https://www.waveshare.com/wiki/SX1262_868M_LoRa_HAT)
+More Information are located in the [Waveshare-Wiki](https://www.waveshare.com/wiki/SX1262_868M_LoRa_HAT).
 All important specific procedures and commands are mentioned there, one way or another.
 The network-library CustomLoraNetwork.cpp handles all synchronization specific to the planned Monitoring network and the conventions for single variables.
