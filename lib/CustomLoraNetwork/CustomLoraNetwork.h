@@ -38,7 +38,20 @@ class CustomLoraNetwork{
 		uint16_t eepromAddress;
 		bool hasRecoveredEeprom;
 
+		CRC32 crc;
+		uint32_t setupChecksum;
+
+		NetworkState currentNetworkState;
+		PackageType lastPackageID;
+
+		long ID;
+		long parentID;
+		long lastMainUnitID;
+		long receivedID;
+
 		int maxSamples;
+		int addedSamples;
+		int receivedSamples;
 		void** dataPointerArray;
 		String* dataNamesArray;
 		Datatype* dataTypesArray;
@@ -49,9 +62,13 @@ class CustomLoraNetwork{
 
 		unsigned long messageReturnTimeoutInterval;
 		unsigned long lastTimePackageSent;
+		unsigned long recMessageCounter;
+		unsigned long sentMessageCounter;
 
 		bool SendNodeDiscoveryAnswer;
 		bool SetNewNodeAddress;
+		unsigned short nodeAddress;
+		unsigned short parentAddress;
 	
 		unsigned short nextAvailableNodeAddress;
 		unsigned short nextNotifiedNodeAddress;
@@ -71,6 +88,8 @@ class CustomLoraNetwork{
 
 		bool RegistrationRequested;
 		bool RegistrationSuccess;
+		bool CustomDataRequested;
+		bool CustomDataAvailable;
 		
 		void RecoverEeprom();
 		void UpdateEeprom();
@@ -137,28 +156,8 @@ class CustomLoraNetwork{
 		int GetLastNoiseStrength();
 		int RequestSNR();
 
-		
-		//Temp Public
-		CRC32 crc;
-		uint32_t setupChecksum;
-		PackageType lastPackageID;
-		NetworkState currentNetworkState;
-		unsigned long recMessageCounter;
-		unsigned long sentMessageCounter;
-		bool CustomDataRequested;
-		bool CustomDataAvailable;
-		long ID;
-		long parentID;
-		unsigned short nodeAddress;
-		unsigned short parentAddress;
-		long lastMainUnitID;
-		long receivedID;
-		int addedSamples;
-		int receivedSamples;
-		String myTest = "Uninitialized";
-		Datatype lastType = UNDEFINED;
-		int lastSize = 0;
-		bool testBool = true;
+		bool NeedCustomDataUpdate();
+		void ConfirmCustomDataUpdate();
 };
 
 

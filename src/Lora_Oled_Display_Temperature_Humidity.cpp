@@ -110,7 +110,7 @@ void loop() {
 		Oled.refreshDisplay();
 	}
 
-	 if(loraNetwork.CustomDataRequested){
+	 if(loraNetwork.NeedCustomDataUpdate()){
 		Oled.setCursor(0,7);
 		Oled.print(F("GO DATA!"));
 
@@ -121,6 +121,6 @@ void loop() {
 		methanAmount = analogRead(methanPin);
 		coAmount = analogRead(coPin);
 
-		loraNetwork.CustomDataAvailable = true;
+		loraNetwork.ConfirmCustomDataUpdate();
 	}
 }

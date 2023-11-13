@@ -1083,3 +1083,11 @@ int CustomLoraNetwork::GetLastNoiseStrength(){
 int CustomLoraNetwork::RequestSNR(){
 	return LoraModule.RequestSNR();
 }
+
+bool CustomLoraNetwork::NeedCustomDataUpdate(){
+	return CustomDataRequested;
+}
+
+void CustomLoraNetwork::ConfirmCustomDataUpdate(){
+	CustomDataAvailable = true;
+}
